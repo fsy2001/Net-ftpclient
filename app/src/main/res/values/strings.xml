@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">FTP客户端</string>
+    <string name="title_activity_file_explorer">文件浏览</string>
+    <string name="login_username">用户名</string>
+    <string name="login_password">密码</string>
+    <string name="login_passive">被动模式</string>
+    <string name="login_hostname">主机地址</string>
+    <string name="login_port">端口号</string>
+    <string name="login_title_server">服务器信息</string>
+    <string name="login_title_credential">登录凭据</string>
+    <string name="login_button">登录</string>
+    <string name="alert_title">错误</string>
+    <string name="alert_connection_error">无法建立与服务器的连接</string>
+    <string name="alert_credential_error">用户名或密码错误</string>
+    <string name="ok">确定</string>
+    <string name="file_disconnect">断开连接</string>
+    <string name="file_upload">上传</string>
+    <string name="file_server_info">服务器信息</string>
+    <string name="file_host_tag">主机：</string>
+    <string name="file_port_tag">端口：</string>
+    <string name="alert_disconnect_title">断开连接</string>
+    <string name="alert_disconnect_message">确认要断开连接吗？</string>
+    <string name="cancel">取消</string>
+    <string name="file_download_title">下载文件</string>
+    <string name="file_download_input_hint">文件名</string>
+    <string name="file_download_button">下载</string>
+    <string name="alert">提示</string>
+</resources>
