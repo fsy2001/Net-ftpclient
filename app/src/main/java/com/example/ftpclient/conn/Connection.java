@@ -1,5 +1,8 @@
 package com.example.ftpclient.conn;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 public class Connection {
     public String status = "";
 
@@ -12,5 +15,13 @@ public class Connection {
     }
 
 
+
+    public void sendFile(String filename, InputStream stream) {
+        try {
+            stream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

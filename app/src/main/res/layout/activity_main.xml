@@ -18,7 +18,7 @@
             android:id="@+id/test_server_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="70dp"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="40dp"
             android:text="@string/login_title_server"
             app:layout_constraintStart_toStartOf="parent"
@@ -26,7 +26,7 @@
 
         <EditText
             android:id="@+id/input_host"
-            android:layout_width="wrap_content"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
@@ -41,7 +41,7 @@
 
         <EditText
             android:id="@+id/input_port"
-            android:layout_width="wrap_content"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:ems="10"
@@ -67,7 +67,7 @@
             android:id="@+id/text_login_credential"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="70dp"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="40dp"
             android:text="@string/login_title_credential"
             app:layout_constraintStart_toStartOf="parent"
@@ -76,7 +76,7 @@
 
         <EditText
             android:id="@+id/input_username"
-            android:layout_width="wrap_content"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
@@ -92,7 +92,7 @@
 
         <EditText
             android:id="@+id/input_password"
-            android:layout_width="wrap_content"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:ems="10"

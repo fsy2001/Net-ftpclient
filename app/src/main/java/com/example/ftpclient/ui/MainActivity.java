@@ -6,14 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
 import com.example.ftpclient.R;
 import com.example.ftpclient.conn.Connection;
-import com.example.ftpclient.databinding.ActivityMainBinding;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -66,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
         // showAlert(R.string.alert_credential_error);
 
 
-        // TODO: 如果登录成功，跳转到下一个页面
+        // TODO: 将Connection对象的引用传递给下一个Activity
         Intent connectIntent = new Intent(this, FileExplorer.class);
         startActivity(connectIntent);
     }
