@@ -5,15 +5,17 @@ import java.io.InputStream;
 
 public class Connection {
     public String status = "";
+    public String host;
+    public String port;
 
-    public Connection(String host, String port, boolean passive) {
-
+    public Connection(String host, String port) {
+        this.host = host;
+        this.port = port;
     }
 
     public void connect(String username, String password) {
 
     }
-
 
 
     public void sendFile(String filename, InputStream stream) {

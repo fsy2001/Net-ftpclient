@@ -10,7 +10,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
-        android:layout_height="230dp"
+        android:layout_height="200dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -18,7 +18,7 @@
             android:id="@+id/test_server_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="30dp"
             android:layout_marginTop="40dp"
             android:text="@string/login_title_server"
             app:layout_constraintStart_toStartOf="parent"
@@ -26,7 +26,7 @@
 
         <EditText
             android:id="@+id/input_host"
-            android:layout_width="300dp"
+            android:layout_width="270dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
@@ -41,9 +41,9 @@
 
         <EditText
             android:id="@+id/input_port"
-            android:layout_width="300dp"
+            android:layout_width="270dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="5dp"
             android:ems="10"
             android:hint="@string/login_port"
             android:importantForAutofill="no"
@@ -67,8 +67,7 @@
             android:id="@+id/text_login_credential"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="40dp"
+            android:layout_marginStart="30dp"
             android:text="@string/login_title_credential"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -76,7 +75,7 @@
 
         <EditText
             android:id="@+id/input_username"
-            android:layout_width="300dp"
+            android:layout_width="270dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
@@ -92,9 +91,9 @@
 
         <EditText
             android:id="@+id/input_password"
-            android:layout_width="300dp"
+            android:layout_width="270dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="5dp"
             android:ems="10"
             android:hint="@string/login_password"
             android:importantForAutofill="no"
@@ -110,7 +109,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="@string/login_passive"
+            android:text="@string/login_anonymous"
             app:layout_constraintStart_toStartOf="@+id/input_password"
             app:layout_constraintTop_toBottomOf="@+id/input_password" />
 

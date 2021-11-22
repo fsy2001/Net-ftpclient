@@ -8,18 +8,20 @@ import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ftpclient.R;
+import com.example.ftpclient.conn.Connection;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 
 public class FileExplorer extends AppCompatActivity {
     private static final int PICK_FILE_TO_UPLOAD = 2;
 
+    private Connection connection;
     private Context context;
 
     private EditText filenameText;
@@ -30,6 +32,10 @@ public class FileExplorer extends AppCompatActivity {
         setContentView(R.layout.activity_file_explorer);
 
         this.context = FileExplorer.this;
+        connection = MainActivity.connection;
+        TextView host = findViewById(R.id.host), port = findViewById(R.id.port);
+        host.setText(connection.host);
+        port.setText(connection.port);
 
         filenameText = findViewById(R.id.download_filename);
     }
@@ -45,8 +51,10 @@ public class FileExplorer extends AppCompatActivity {
         AlertDialog alert = builder.setIcon(R.mipmap.ic_launcher_round)
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton(R.string.ok, (dialog, which) -> {})
-                .setNegativeButton(R.string.cancel, (dialog, which) -> {})
+                .setPositiveButton(R.string.ok, (dialog, which) -> {
+                })
+                .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                })
                 .create();
         alert.show();
     }
@@ -57,7 +65,8 @@ public class FileExplorer extends AppCompatActivity {
                 .setTitle(R.string.alert_disconnect_title)
                 .setMessage(R.string.alert_disconnect_message)
                 .setPositiveButton(R.string.ok, (dialog, which) -> finish())
-                .setNegativeButton(R.string.cancel, (dialog, which) -> {})
+                .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                })
                 .create();
         alert.show();
     }
@@ -83,7 +92,8 @@ public class FileExplorer extends AppCompatActivity {
 
         Uri uri = resultData.getData();
 
-        try (OutputStream outputStream = getContentResolver().openOutputStream(uri);
+
+        try (InputStream inputStream = getContentResolver().openInputStream(uri);
              Cursor cursor = getContentResolver()
                      .query(uri, null, null, null, null, null)) {
             cursor.moveToFirst();
@@ -100,8 +110,7 @@ public class FileExplorer extends AppCompatActivity {
                                  Intent resultData) {
         super.onActivityResult(requestCode, resultCode, resultData);
 
-        if (requestCode == PICK_FILE_TO_UPLOAD) {
+        if (requestCode == PICK_FILE_TO_UPLOAD)
             handleUpload(resultData, resultCode);
-        }
     }
 }

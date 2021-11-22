@@ -3,7 +3,7 @@
     <string name="title_activity_file_explorer">文件浏览</string>
     <string name="login_username">用户名</string>
     <string name="login_password">密码</string>
-    <string name="login_passive">被动模式</string>
+    <string name="login_anonymous">匿名登录</string>
     <string name="login_hostname">主机地址</string>
     <string name="login_port">端口号</string>
     <string name="login_title_server">服务器信息</string>
@@ -26,4 +26,10 @@
     <string name="file_download_button">下载</string>
     <string name="alert">提示</string>
     <string name="alert_file_not_exist">文件不存在或无法打开</string>
+    <string name="file_transfer_type">传输模式</string>
+    <string name="file_connection_type">连接模式</string>
+    <string name="file_transfer_ascii">文本模式</string>
+    <string name="file_transfer_binary">二进制模式</string>
+    <string name="file_connection_passive">被动连接</string>
+    <string name="file_connection_active">主动连接</string>
 </resources>

@@ -9,9 +9,11 @@
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
-        android:layout_width="350dp"
+        android:layout_width="300dp"
         android:layout_height="200dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="30dp"
+        android:layout_marginEnd="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -35,9 +37,10 @@
                 android:id="@+id/file_host_tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="30dp"
                 android:layout_marginTop="15dp"
                 android:text="@string/file_host_tag"
-                app:layout_constraintEnd_toEndOf="@+id/file_server_info"
+                app:layout_constraintStart_toStartOf="@+id/file_server_info"
                 app:layout_constraintTop_toBottomOf="@+id/file_server_info" />
 
             <TextView
@@ -110,7 +113,7 @@
         android:id="@+id/download_filename"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="15dp"
         android:ems="10"
         android:hint="@string/file_download_input_hint"
         android:importantForAutofill="no"
@@ -121,11 +124,76 @@
 
     <Button
         android:id="@+id/file_download_button"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="download"
         android:text="@string/file_download_button"
         app:layout_constraintEnd_toEndOf="@+id/cardView"
         app:layout_constraintTop_toTopOf="@+id/download_filename" />
+
+    <TextView
+        android:id="@+id/file_connection_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:text="@string/file_connection_type"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        app:layout_constraintStart_toStartOf="@+id/download_filename"
+        app:layout_constraintTop_toBottomOf="@+id/download_filename" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:checkedButton="@id/connection_passive"
+        app:layout_constraintStart_toStartOf="@+id/file_connection_title"
+        app:layout_constraintTop_toBottomOf="@+id/file_connection_title">
+
+        <RadioButton
+            android:id="@+id/connection_passive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/file_connection_passive" />
+
+        <RadioButton
+            android:id="@+id/connection_active"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/file_connection_active" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/file_transfer_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="30dp"
+        android:text="@string/file_transfer_type"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:layout_constraintStart_toEndOf="@+id/radioGroup"
+        app:layout_constraintTop_toBottomOf="@+id/download_filename" />
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:checkedButton="@id/transfer_binary"
+        app:layout_constraintStart_toStartOf="@+id/file_transfer_title"
+        app:layout_constraintTop_toBottomOf="@+id/file_transfer_title">
+
+        <RadioButton
+            android:id="@+id/transfer_binary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/file_transfer_binary" />
+
+        <RadioButton
+            android:id="@+id/transfer_ascii"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/file_transfer_ascii" />
+    </RadioGroup>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

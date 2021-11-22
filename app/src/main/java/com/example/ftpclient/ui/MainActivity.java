@@ -15,6 +15,7 @@ import com.example.ftpclient.conn.Connection;
 
 
 public class MainActivity extends AppCompatActivity {
+    public static Connection connection = null;
 
     private Context context;
 
@@ -22,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText portText;
     private EditText usernameText;
     private EditText passwordText;
-    private CheckBox passiveBox;
+    private CheckBox anonymousBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +36,13 @@ public class MainActivity extends AppCompatActivity {
         portText = findViewById(R.id.input_port);
         usernameText = findViewById(R.id.input_username);
         passwordText = findViewById(R.id.input_password);
-        passiveBox = findViewById(R.id.checkbox_passive);
+        anonymousBox = findViewById(R.id.checkbox_passive);
+
+        anonymousBox.setOnClickListener(view -> {
+            boolean anonymous = anonymousBox.isChecked();
+            usernameText.setEnabled(!anonymous);
+            passwordText.setEnabled(!anonymous);
+        });
     }
 
     public void showAlert(Integer message) {
@@ -51,20 +58,21 @@ public class MainActivity extends AppCompatActivity {
     public void login(View view) {
         String host = hostText.getText().toString();
         String port = portText.getText().toString();
-        boolean passive = passiveBox.isChecked();
-        Connection connection = new Connection(host, port, passive);
+
+        connection = new Connection(host, port);
+
         // TODO: 如果无法连接，弹窗报错
         // showAlert(R.string.alert_connection_error);
 
 
         String username = usernameText.getText().toString();
         String password = passwordText.getText().toString();
+        boolean anonymous = anonymousBox.isChecked();
         connection.connect(username, password);
         // TODO: 如果登录错误，弹窗报错
         // showAlert(R.string.alert_credential_error);
 
 
-        // TODO: 将Connection对象的引用传递给下一个Activity
         Intent connectIntent = new Intent(this, FileExplorer.class);
         startActivity(connectIntent);
     }
