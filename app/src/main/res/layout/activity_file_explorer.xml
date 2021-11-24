@@ -127,7 +127,7 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="download"
+        android:onClick="selectDownloadPosition"
         android:text="@string/file_download_button"
         app:layout_constraintEnd_toEndOf="@+id/cardView"
         app:layout_constraintTop_toTopOf="@+id/download_filename" />
@@ -171,7 +171,7 @@
         android:layout_marginStart="40dp"
         android:layout_marginTop="30dp"
         android:text="@string/file_transfer_type"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         app:layout_constraintStart_toEndOf="@+id/radioGroup"
         app:layout_constraintTop_toBottomOf="@+id/download_filename" />
 

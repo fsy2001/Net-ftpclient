@@ -1,31 +1,47 @@
 package com.example.ftpclient.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.documentfile.provider.DocumentFile;
 
 import com.example.ftpclient.R;
 import com.example.ftpclient.conn.Connection;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteOrder;
 
 public class FileExplorer extends AppCompatActivity {
-    private static final int PICK_FILE_TO_UPLOAD = 2;
+    private static final int PICK_FILE_TO_UPLOAD = 0x2222;
+    private static final int SELECT_DOWNLOAD_POS = 0x3333;
 
     private Connection connection;
     private Context context;
 
     private EditText filenameText;
+    private RadioButton passiveButton, binaryButton;
 
+    private Integer errorMsgCode;
+
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,16 +50,20 @@ public class FileExplorer extends AppCompatActivity {
         this.context = FileExplorer.this;
         connection = MainActivity.connection;
         TextView host = findViewById(R.id.host), port = findViewById(R.id.port);
-        host.setText(connection.host);
-        port.setText(connection.port);
+        host.setText(connection.serverIp);
+        port.setText(Integer.toString(connection.serverPort));
 
         filenameText = findViewById(R.id.download_filename);
+        passiveButton = findViewById(R.id.connection_passive);
+        binaryButton = findViewById(R.id.transfer_binary);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // TODO: 断开连接
+
+        Thread thread = new Thread(() -> connection.quit());
+        thread.start();
     }
 
     private void showAlert(Integer title, Integer message) {
@@ -64,16 +84,89 @@ public class FileExplorer extends AppCompatActivity {
         AlertDialog alert = builder.setIcon(R.mipmap.ic_launcher_round)
                 .setTitle(R.string.alert_disconnect_title)
                 .setMessage(R.string.alert_disconnect_message)
-                .setPositiveButton(R.string.ok, (dialog, which) -> finish())
+                .setPositiveButton(R.string.ok, (dialog, which) -> {
+                    Thread thread = new Thread(() -> connection.quit());
+                    thread.start();
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    finish();
+                })
                 .setNegativeButton(R.string.cancel, (dialog, which) -> {
                 })
                 .create();
         alert.show();
     }
 
-    public void download(View view) {
+    public void selectDownloadPosition(View view) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        startActivityForResult(intent, SELECT_DOWNLOAD_POS);
+    }
+
+    public void handleDownload(Intent resultData, int resultCode) {
+        if (resultCode != RESULT_OK || resultData == null) {
+            showAlert(R.string.alert_title, R.string.alert_dir_not_exist);
+            return;
+        }
+
+        Uri path = resultData.getData();
+        DocumentFile targetPos = DocumentFile.fromTreeUri(this, path);
+        if (targetPos == null) {
+            showAlert(R.string.alert_title, R.string.alert_dir_not_exist);
+            return;
+        }
+
         String filename = filenameText.getText().toString();
-        // TODO: 交付FTP模块下载
+        if (targetPos.findFile(filename) != null) {
+            showAlert(R.string.alert_title, R.string.alert_conflict_filename);
+            return;
+        }
+        DocumentFile downloadFile;
+        if ((downloadFile = targetPos.createFile("*/*", filename)) == null) {
+            showAlert(R.string.alert_title, R.string.alert_cannot_create_file);
+            return;
+        }
+
+        try (OutputStream outputStream = getContentResolver().openOutputStream(downloadFile.getUri())) {
+
+
+            boolean passive = passiveButton.isChecked(),
+                    binary = binaryButton.isChecked();
+
+            Thread thread = new Thread(() -> {
+                /* 设置传输模式 */
+                if ((errorMsgCode = connection.setType(binary)) != 0)
+                    return;
+
+                /* 设置连接模式 */
+                boolean success = passive ?
+                        connection.setPassive() : connection.sendPort(getLocalIpAddress());
+                if (!success) {
+                    errorMsgCode = R.string.alert_connection_mode_not_set;
+                    return;
+                }
+
+                errorMsgCode = connection.downloadFile(filename, outputStream);
+            });
+
+            try {
+                thread.start();
+                // TODO: 显示一个正在加载的弹窗
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (errorMsgCode != 0) {
+                showAlert(R.string.alert, errorMsgCode);
+                downloadFile.delete(); // 下载失败，删除文件
+            }
+
+        } catch (IOException | NullPointerException e) {
+            e.printStackTrace();
+        }
     }
 
     public void pickFileUpload(View view) {
@@ -92,15 +185,44 @@ public class FileExplorer extends AppCompatActivity {
 
         Uri uri = resultData.getData();
 
-
         try (InputStream inputStream = getContentResolver().openInputStream(uri);
              Cursor cursor = getContentResolver()
                      .query(uri, null, null, null, null, null)) {
             cursor.moveToFirst();
             String fileName = cursor.getString(
                     cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-            // TODO: 将输出流、文件名交付FTP模块发送
-        } catch (Exception ignored) {
+
+            boolean passive = passiveButton.isChecked(),
+                    binary = binaryButton.isChecked();
+
+            Thread thread = new Thread(() -> {
+                /* 设置传输模式 */
+                if ((errorMsgCode = connection.setType(binary)) != 0)
+                    return;
+
+                /* 设置连接模式 */
+                boolean success = passive ?
+                        connection.setPassive() : connection.sendPort(getLocalIpAddress());
+                if (!success) {
+                    errorMsgCode = R.string.alert_connection_mode_not_set;
+                    return;
+                }
+
+
+
+                errorMsgCode = connection.uploadFile(fileName, inputStream);
+            });
+            try {
+                thread.start();
+                // TODO: 显示一个正在加载的弹窗
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (errorMsgCode != 0) showAlert(R.string.alert, errorMsgCode);
+
+        } catch (Exception e) {
             showAlert(R.string.alert_title, R.string.alert_file_not_exist);
         }
     }
@@ -112,5 +234,36 @@ public class FileExplorer extends AppCompatActivity {
 
         if (requestCode == PICK_FILE_TO_UPLOAD)
             handleUpload(resultData, resultCode);
+
+        if (requestCode == SELECT_DOWNLOAD_POS)
+            handleDownload(resultData, resultCode);
+    }
+
+    public String getLocalIpAddress() {
+        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        if (wifiManager != null) {
+            @SuppressLint("MissingPermission") WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            return ipAddressToString(wifiInfo.getIpAddress());
+        }
+        return "";
+    }
+
+    public static String ipAddressToString(int ipAddress) {
+
+        if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+            ipAddress = Integer.reverseBytes(ipAddress);
+        }
+
+        byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+
+        String ipAddressString;
+        try {
+            ipAddressString = InetAddress.getByAddress(ipByteArray)
+                    .getHostAddress();
+        } catch (UnknownHostException ex) {
+            ipAddressString = "NaN";
+        }
+
+        return ipAddressString;
     }
 }
