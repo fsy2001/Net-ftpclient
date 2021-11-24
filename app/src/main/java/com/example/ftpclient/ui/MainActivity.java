@@ -16,7 +16,6 @@ import com.example.ftpclient.conn.Connection;
 
 import java.io.IOException;
 
-
 public class MainActivity extends AppCompatActivity {
     public static Connection connection = null;
 
@@ -27,10 +26,6 @@ public class MainActivity extends AppCompatActivity {
     private EditText usernameText;
     private EditText passwordText;
     private CheckBox anonymousBox;
-
-    /* 供连接时线程共享的变量 */
-    private boolean connectSuccess;
-    private Integer errorMessage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,8 +59,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void login(View view) {
-        connectSuccess = false;
-
         String host = hostText.getText().toString();
         String port = portText.getText().toString();
         if (!Patterns.IP_ADDRESS.matcher(host).matches() || !port.matches("\\d+")) {
@@ -73,13 +66,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-
         Thread thread = new Thread(() -> {
             try {
                 connection = new Connection(host, Integer.parseInt(port));
             } catch (IOException e) {
                 if (connection != null) connection.close();
-                errorMessage = R.string.alert_connection_error;
+                runOnUiThread(() -> showAlert(R.string.alert_connection_error));
                 return;
             }
 
@@ -88,26 +80,18 @@ public class MainActivity extends AppCompatActivity {
             String username = usernameText.getText().toString();
             String password = passwordText.getText().toString();
             if (!anonymous && !connection.login(username, password)) {
-                errorMessage = R.string.alert_credential_error;
+                runOnUiThread(() -> showAlert(R.string.alert_credential_error));
                 connection.close();
                 return;
             }
-            connectSuccess = true;
+
+            /* 登录成功 */
+            runOnUiThread(() -> {
+                Intent connectIntent = new Intent(this, FileExplorer.class);
+                startActivity(connectIntent);
+            });
         });
 
         thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            return;
-        }
-
-
-        if (connectSuccess) {
-            Intent connectIntent = new Intent(this, FileExplorer.class);
-            startActivity(connectIntent);
-        } else {
-            showAlert(errorMessage);
-        }
     }
 }

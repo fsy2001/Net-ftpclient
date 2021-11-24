@@ -1,5 +1,7 @@
 package com.example.ftpclient.ui;
 
+import static com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_SHORT;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +22,7 @@ import androidx.documentfile.provider.DocumentFile;
 
 import com.example.ftpclient.R;
 import com.example.ftpclient.conn.Connection;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -129,41 +132,49 @@ public class FileExplorer extends AppCompatActivity {
             return;
         }
 
-        try (OutputStream outputStream = getContentResolver().openOutputStream(downloadFile.getUri())) {
-
+        try {
+            OutputStream outputStream = getContentResolver().openOutputStream(downloadFile.getUri());
 
             boolean passive = passiveButton.isChecked(),
                     binary = binaryButton.isChecked();
 
             Thread thread = new Thread(() -> {
                 /* 设置传输模式 */
-                if ((errorMsgCode = connection.setType(binary)) != 0)
+                if ((errorMsgCode = connection.setType(binary)) != 0) {
+                    runOnUiThread(() -> showAlert(R.string.alert_title, errorMsgCode));
                     return;
+                }
 
                 /* 设置连接模式 */
                 boolean success = passive ?
                         connection.setPassive() : connection.sendPort(getLocalIpAddress());
                 if (!success) {
-                    errorMsgCode = R.string.alert_connection_mode_not_set;
+                    runOnUiThread(() -> showAlert(R.string.alert_title, R.string.alert_connection_mode_not_set));
                     return;
                 }
 
+                /* 开始传输 */
+                runOnUiThread(() -> Snackbar
+                        .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
+                        .show());
                 errorMsgCode = connection.downloadFile(filename, outputStream);
+
+                /* 传输结束 */
+                runOnUiThread(() -> {
+                    if (errorMsgCode == 0) { // 成功提示
+                        Snackbar
+                                .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
+                                .show();
+                    } else showAlert(R.string.alert_title, errorMsgCode); // 错误提示
+                });
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
 
-            try {
-                thread.start();
-                // TODO: 显示一个正在加载的弹窗
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            if (errorMsgCode != 0) {
-                showAlert(R.string.alert, errorMsgCode);
-                downloadFile.delete(); // 下载失败，删除文件
-            }
-
+            thread.start();
         } catch (IOException | NullPointerException e) {
             e.printStackTrace();
         }
@@ -185,9 +196,10 @@ public class FileExplorer extends AppCompatActivity {
 
         Uri uri = resultData.getData();
 
-        try (InputStream inputStream = getContentResolver().openInputStream(uri);
-             Cursor cursor = getContentResolver()
-                     .query(uri, null, null, null, null, null)) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            Cursor cursor = getContentResolver()
+                    .query(uri, null, null, null, null, null);
             cursor.moveToFirst();
             String fileName = cursor.getString(
                     cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
@@ -197,31 +209,42 @@ public class FileExplorer extends AppCompatActivity {
 
             Thread thread = new Thread(() -> {
                 /* 设置传输模式 */
-                if ((errorMsgCode = connection.setType(binary)) != 0)
+                if ((errorMsgCode = connection.setType(binary)) != 0) {
+                    runOnUiThread(() -> showAlert(R.string.alert_title, errorMsgCode));
                     return;
+                }
 
                 /* 设置连接模式 */
                 boolean success = passive ?
                         connection.setPassive() : connection.sendPort(getLocalIpAddress());
                 if (!success) {
-                    errorMsgCode = R.string.alert_connection_mode_not_set;
+                    runOnUiThread(() -> showAlert(R.string.alert_title, R.string.alert_connection_mode_not_set));
                     return;
                 }
 
-
-
+                /* 开始传输 */
+                runOnUiThread(() -> Snackbar
+                        .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
+                        .show());
                 errorMsgCode = connection.uploadFile(fileName, inputStream);
+
+                /* 传输结束 */
+                runOnUiThread(() -> {
+                    if (errorMsgCode == 0) { // 成功提示
+                        Snackbar
+                                .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
+                                .show();
+                    } else showAlert(R.string.alert_title, errorMsgCode); // 错误提示
+                });
+                try {
+                    inputStream.close();
+                    cursor.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
-            try {
-                thread.start();
-                // TODO: 显示一个正在加载的弹窗
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
 
-            if (errorMsgCode != 0) showAlert(R.string.alert, errorMsgCode);
-
+            thread.start();
         } catch (Exception e) {
             showAlert(R.string.alert_title, R.string.alert_file_not_exist);
         }
