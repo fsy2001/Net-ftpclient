@@ -25,20 +25,16 @@ public class Connection {
     private int serverDataPort; // 远程服务器的端口，通过PASV命令取得
 
     /* 本机网络信息 */
-    private final Socket socket;
+    private final Socket controlSocket;
     private ServerSocket dataListener;
     private final PrintWriter out;
     private final BufferedReader in;
 
-    /* 上下文变量 */
-    public boolean passive = true;
-    public boolean binaryMode = true;
-
 
     public Connection(String ip, int port) throws IOException {
-        this.socket = new Socket(ip, port);
-        this.out = new PrintWriter(socket.getOutputStream(), true);
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.controlSocket = new Socket(ip, port);
+        this.out = new PrintWriter(controlSocket.getOutputStream(), true);
+        this.in = new BufferedReader(new InputStreamReader(controlSocket.getInputStream()));
 
         this.serverIp = ip;
         this.serverPort = port;
@@ -48,7 +44,7 @@ public class Connection {
         try {
             out.close();
             in.close();
-            socket.close();
+            controlSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -71,39 +67,33 @@ public class Connection {
         }
     }
 
-    public boolean setPassive() {
-        try {
-            out.println("PASV");
-            String response = in.readLine();
-            String[] parts = response.split("\\s+");
-            if (parts.length < 2 || !parts[0].equals("227")) return false;
+    public boolean setPassive() throws IOException {
+        out.println("PASV");
+        String response = in.readLine();
+        String[] parts = response.split("\\s+");
+        if (parts.length < 2 || !parts[0].equals("227")) return false;
 
-            String message = parts[1];
-            String[] addressParts = message.split(","); // 6个数字，前4个为IP，后2个为端口号
-            if (addressParts.length != 6) return false;
+        String message = parts[1];
+        String[] addressParts = message.split(","); // 6个数字，前4个为IP，后2个为端口号
+        if (addressParts.length != 6) return false;
 
-            /* 检查IP地址格式是否合法 */
-            int[] ipArray = {Integer.parseInt(addressParts[0]),
-                    Integer.parseInt(addressParts[1]),
-                    Integer.parseInt(addressParts[2]),
-                    Integer.parseInt(addressParts[3])};
-            for (Integer i : ipArray) {
-                if (i < 0 || i >= 256) return false;
-            }
-            @SuppressLint("DefaultLocale")
-            String ip = String.format("%d.%d.%d.%d", ipArray[0], ipArray[1], ipArray[2], ipArray[3]);
+        /* 检查IP地址格式是否合法 */
+        int[] ipArray = {Integer.parseInt(addressParts[0]),
+                Integer.parseInt(addressParts[1]),
+                Integer.parseInt(addressParts[2]),
+                Integer.parseInt(addressParts[3])};
+        for (Integer i : ipArray)
+            if (i < 0 || i >= 256) return false;
+        @SuppressLint("DefaultLocale")
+        String ip = String.format("%d.%d.%d.%d", ipArray[0], ipArray[1], ipArray[2], ipArray[3]);
 
-            /* 检查端口号是否合法 */
-            int port = Integer.parseInt(addressParts[4]) * 256 + Integer.parseInt(addressParts[5]);
-            if (port < 0) return false;
+        /* 检查端口号是否合法 */
+        int port = Integer.parseInt(addressParts[4]) * 256 + Integer.parseInt(addressParts[5]);
+        if (port < 0) return false;
 
-            serverDataIp = ip;
-            serverDataPort = port;
-            passive = true;
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
+        serverDataIp = ip;
+        serverDataPort = port;
+        return true;
     }
 
     public boolean sendPort(String ipAddress) {
@@ -111,7 +101,6 @@ public class Connection {
             @SuppressLint("DefaultLocale")
             String port = String.format("%d,%d", localDataPort / 256, localDataPort % 256);
             String ip = ipAddress.replace('.', ',');
-            passive = false;
             out.println(String.format("PORT %s,%s", ip, port));
             String response = in.readLine();
             return response.startsWith("200");
@@ -120,127 +109,133 @@ public class Connection {
         }
     }
 
-    public int setType(boolean binary) { // binary为true，则是binary；false为ASCII
-        try {
-            out.println(String.format("TYPE: %s", binary ? "I" : "A"));
-            String response = in.readLine();
-            if (response.startsWith("200")) {
-                this.binaryMode = binary;
-                return 0;
-            } else return R.string.alert_transfer_mode_not_set;
-        } catch (IOException e) {
-            return R.string.alert_net_error;
-        }
+    public int setType(boolean binary) throws IOException { // binary为true，则是binary；false为ASCII
+        out.println(String.format("TYPE %s", binary ? "I" : "A"));
+        String response = in.readLine();
+        if (response.startsWith("200")) return 0;
+        else return R.string.alert_transfer_mode_not_set;
     }
 
-    private Socket createDataConnection() throws IOException {
+    private Socket createDataConnection(boolean passive) throws IOException {
         if (!passive) {
-            dataListener = new ServerSocket(localDataPort);
             return dataListener.accept();
         } else {
             return new Socket(serverDataIp, serverDataPort);
         }
     }
 
-    public int uploadFile(String filename, InputStream fileStream) {
+    public int uploadFile(String filename, InputStream fileStream,
+                          boolean binary, boolean passive, String ipAddress) {
         try {
-            Socket dataConn = createDataConnection();
-            out.println(String.format("STOR %s", filename));
+            int errorCode;
+            if ((errorCode = setType(binary)) != 0) // 设置传输模式
+                return errorCode;
 
-            String response = in.readLine();
-            if (!response.startsWith("150")) { // 服务器拒绝传输
+            if (!(passive ? setPassive() : sendPort(ipAddress))) // 设置连接模式
+                return R.string.alert_connection_mode_not_set;
+
+            if (!passive)
+                dataListener = new ServerSocket(localDataPort);
+
+            out.println(String.format("STOR %s", filename)); // 发送传输指令
+            Socket dataConn = createDataConnection(passive); // 建立连接 FIXME: 可能的时序问题：服务器没有建立连接，阻塞在这里
+
+            String startResponse = in.readLine(); // 服务器准备传输
+            if (!startResponse.startsWith("150")) { // 服务器拒绝传输
                 dataConn.close();
-                if (dataListener != null) { // 关闭监听端口
+                if (!passive) { // 关闭监听端口
                     dataListener.close();
                     dataListener = null;
                 }
                 return R.string.alert_server_rejection;
             }
 
-            if (binaryMode) { // 二进制模式
-                int bufferSize = 1460; // 一个TCP payload的大小
-                byte[] buffer = new byte[bufferSize];
-                BufferedOutputStream dataOut = new BufferedOutputStream(dataConn.getOutputStream(), bufferSize);
-                BufferedInputStream fileIn = new BufferedInputStream(fileStream, bufferSize);
-                int size;
-                while ((size = fileIn.read(buffer)) != -1) {
-                    dataOut.write(buffer, 0, size);
-                }
-                dataOut.close();
-                fileIn.close();
-            } else { // 文本模式
-                PrintWriter dataOut = new PrintWriter(dataConn.getOutputStream(), true);
-                BufferedReader fileIn = new BufferedReader(new InputStreamReader(fileStream));
-                String line;
-                while ((line = fileIn.readLine()) != null) {
-                    dataOut.println(line);
-                }
-                dataOut.close();
-                fileIn.close();
-            }
+            /* 传输数据 */
+            if (binary)
+                binaryDump(fileStream, dataConn.getOutputStream());
+            else
+                textDump(fileStream, dataConn.getOutputStream());
 
+            /* 收尾工作 */
             dataConn.close();
-            if (dataListener != null) { // 关闭监听端口
+            if (!passive) { // 关闭监听端口
                 dataListener.close();
                 dataListener = null;
             }
 
             String completeResponse = in.readLine();
-            return completeResponse.startsWith("200") ? 0 : R.string.alert_upload_fail;
+            return completeResponse.startsWith("226") ? 0 : R.string.alert_upload_fail;
         } catch (IOException e) {
             return R.string.alert_net_error;
         }
     }
 
-    // R.string.alert_download_error
-    public int downloadFile(String filename, OutputStream fileStream) {
+    public int downloadFile(String filename, OutputStream fileStream,
+                            boolean binary, boolean passive, String ipAddress) {
         try {
-            Socket dataConn = createDataConnection();
-            out.println(String.format("RETR %s", filename));
+            int errorCode;
+            if ((errorCode = setType(binary)) != 0) // 设置传输模式
+                return errorCode;
 
-            String response = in.readLine();
-            if (!response.startsWith("150")) {
+            if (!(passive ? setPassive() : sendPort(ipAddress))) // 设置连接模式
+                return R.string.alert_connection_mode_not_set;
+
+            if (!passive)
+                dataListener = new ServerSocket(localDataPort);
+
+            out.println(String.format("RETR %s", filename));
+            Socket dataConn = createDataConnection(passive); // FIXME
+
+            String startResponse = in.readLine();
+            if (!startResponse.startsWith("150")) {
                 dataConn.close();
-                if (dataListener != null) { // 关闭监听端口
+                if (!passive) { // 关闭监听端口
                     dataListener.close();
                     dataListener = null;
                 }
                 return R.string.alert_server_rejection;
             }
 
-            if (binaryMode) { // 二进制模式
-                int bufferSize = 1460; // 一个TCP payload的大小
-                byte[] buffer = new byte[bufferSize];
-                BufferedOutputStream fileOut = new BufferedOutputStream(fileStream, bufferSize);
-                BufferedInputStream dataIn = new BufferedInputStream(dataConn.getInputStream(), bufferSize);
-                int size;
-                while ((size = dataIn.read(buffer)) != -1) {
-                    fileOut.write(buffer, 0, size);
-                }
-                fileOut.close();
-                dataIn.close();
-            } else { // 文本模式
-                PrintWriter fileOut = new PrintWriter(fileStream);
-                BufferedReader dataIn = new BufferedReader(new InputStreamReader(dataConn.getInputStream()));
-                String line;
-                while ((line = dataIn.readLine()) != null) {
-                    fileOut.println(line);
-                }
-                fileOut.close();
-                dataIn.close();
-            }
+            /* 传输数据 */
+            if (binary)
+                binaryDump(dataConn.getInputStream(), fileStream);
+            else
+                textDump(dataConn.getInputStream(), fileStream);
 
+            /* 收尾工作 */
             dataConn.close();
-            if (dataListener != null) { // 关闭监听端口
+            if (!passive) { // 关闭监听端口
                 dataListener.close();
                 dataListener = null;
             }
 
             String completeResponse = in.readLine();
-            return completeResponse.startsWith("200") ? 0 : R.string.alert_download_fail;
+            return completeResponse.startsWith("226") ? 0 : R.string.alert_download_fail;
         } catch (IOException e) {
             return R.string.alert_net_error;
         }
+    }
+
+    private void binaryDump(InputStream in, OutputStream out) throws IOException {
+        int bufferSize = 1460; // 一个TCP payload的大小
+        byte[] buffer = new byte[bufferSize];
+        BufferedInputStream src = new BufferedInputStream(in, bufferSize);
+        BufferedOutputStream target = new BufferedOutputStream(out, bufferSize);
+        int size;
+        while ((size = src.read(buffer)) != -1)
+            target.write(buffer, 0, size);
+        src.close();
+        target.close();
+    }
+
+    private void textDump(InputStream in, OutputStream out) throws IOException {
+        BufferedReader src = new BufferedReader(new InputStreamReader(in));
+        PrintWriter target = new PrintWriter(out);
+        String line;
+        while ((line = src.readLine()) != null)
+            target.write(line);
+        src.close();
+        target.close();
     }
 
     public void quit() {
@@ -248,7 +243,7 @@ public class Connection {
             out.println("QUIT");
             in.close();
             out.close();
-            socket.close();
+            controlSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

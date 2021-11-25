@@ -109,6 +109,7 @@ public class FileExplorer extends AppCompatActivity {
     }
 
     public void handleDownload(Intent resultData, int resultCode) {
+        /* 校验 */
         if (resultCode != RESULT_OK || resultData == null) {
             showAlert(R.string.alert_title, R.string.alert_dir_not_exist);
             return;
@@ -132,6 +133,7 @@ public class FileExplorer extends AppCompatActivity {
             return;
         }
 
+        /* 传输 */
         try {
             OutputStream outputStream = getContentResolver().openOutputStream(downloadFile.getUri());
 
@@ -139,25 +141,12 @@ public class FileExplorer extends AppCompatActivity {
                     binary = binaryButton.isChecked();
 
             Thread thread = new Thread(() -> {
-                /* 设置传输模式 */
-                if ((errorMsgCode = connection.setType(binary)) != 0) {
-                    runOnUiThread(() -> showAlert(R.string.alert_title, errorMsgCode));
-                    return;
-                }
-
-                /* 设置连接模式 */
-                boolean success = passive ?
-                        connection.setPassive() : connection.sendPort(getLocalIpAddress());
-                if (!success) {
-                    runOnUiThread(() -> showAlert(R.string.alert_title, R.string.alert_connection_mode_not_set));
-                    return;
-                }
-
-                /* 开始传输 */
                 runOnUiThread(() -> Snackbar
                         .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
                         .show());
-                errorMsgCode = connection.downloadFile(filename, outputStream);
+                /* 开始传输 */
+                errorMsgCode = connection.downloadFile(filename, outputStream,
+                        binary, passive, getLocalIpAddress());
 
                 /* 传输结束 */
                 runOnUiThread(() -> {
@@ -165,8 +154,12 @@ public class FileExplorer extends AppCompatActivity {
                         Snackbar
                                 .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
                                 .show();
-                    } else showAlert(R.string.alert_title, errorMsgCode); // 错误提示
+                    } else {
+                        showAlert(R.string.alert_title, errorMsgCode); // 错误提示
+                        downloadFile.delete();
+                    }
                 });
+
                 try {
                     outputStream.close();
                 } catch (IOException e) {
@@ -208,33 +201,21 @@ public class FileExplorer extends AppCompatActivity {
                     binary = binaryButton.isChecked();
 
             Thread thread = new Thread(() -> {
-                /* 设置传输模式 */
-                if ((errorMsgCode = connection.setType(binary)) != 0) {
-                    runOnUiThread(() -> showAlert(R.string.alert_title, errorMsgCode));
-                    return;
-                }
-
-                /* 设置连接模式 */
-                boolean success = passive ?
-                        connection.setPassive() : connection.sendPort(getLocalIpAddress());
-                if (!success) {
-                    runOnUiThread(() -> showAlert(R.string.alert_title, R.string.alert_connection_mode_not_set));
-                    return;
-                }
-
-                /* 开始传输 */
                 runOnUiThread(() -> Snackbar
                         .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
                         .show());
-                errorMsgCode = connection.uploadFile(fileName, inputStream);
+                /* 开始传输 */
+                errorMsgCode = connection.uploadFile(fileName, inputStream,
+                        binary, passive, getLocalIpAddress());
 
                 /* 传输结束 */
                 runOnUiThread(() -> {
-                    if (errorMsgCode == 0) { // 成功提示
+
+                    if (errorMsgCode == 0) // 成功提示
                         Snackbar
-                                .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
-                                .show();
-                    } else showAlert(R.string.alert_title, errorMsgCode); // 错误提示
+                            .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
+                            .show();
+                    else showAlert(R.string.alert_title, errorMsgCode); // 错误提示
                 });
                 try {
                     inputStream.close();
