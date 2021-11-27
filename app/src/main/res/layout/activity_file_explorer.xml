@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/disconnect_button"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:screenOrientation="portrait"
@@ -136,7 +137,7 @@
         android:id="@+id/file_connection_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="80dp"
         android:text="@string/file_connection_type"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         app:layout_constraintStart_toStartOf="@+id/download_filename"
@@ -169,7 +170,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="40dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="80dp"
         android:text="@string/file_transfer_type"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         app:layout_constraintStart_toEndOf="@+id/radioGroup"
@@ -195,5 +196,35 @@
             android:layout_height="wrap_content"
             android:text="@string/file_transfer_ascii" />
     </RadioGroup>
+
+    <Button
+        android:id="@+id/button_file_stucture"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/file_structure"
+        app:layout_constraintStart_toStartOf="@+id/download_filename"
+        app:layout_constraintTop_toBottomOf="@+id/download_filename" />
+
+    <Button
+        android:id="@+id/button_stream"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/mode_stream"
+        app:layout_constraintBottom_toBottomOf="@+id/button_block"
+        app:layout_constraintStart_toEndOf="@+id/button_block"
+        app:layout_constraintTop_toTopOf="@+id/button_block" />
+
+    <Button
+        android:id="@+id/button_block"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/mode_block"
+        app:layout_constraintBottom_toBottomOf="@+id/button_file_stucture"
+        app:layout_constraintStart_toEndOf="@+id/button_file_stucture"
+        app:layout_constraintTop_toTopOf="@+id/button_file_stucture" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

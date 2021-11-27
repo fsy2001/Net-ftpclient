@@ -12,6 +12,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ import androidx.documentfile.provider.DocumentFile;
 
 import com.example.ftpclient.R;
 import com.example.ftpclient.conn.Connection;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
@@ -41,6 +43,8 @@ public class FileExplorer extends AppCompatActivity {
 
     private EditText filenameText;
     private RadioButton passiveButton, binaryButton;
+    private Button downloadButton, disconnectButton;
+    private FloatingActionButton uploadButton;
 
     private Integer errorMsgCode;
 
@@ -59,6 +63,10 @@ public class FileExplorer extends AppCompatActivity {
         filenameText = findViewById(R.id.download_filename);
         passiveButton = findViewById(R.id.connection_passive);
         binaryButton = findViewById(R.id.transfer_binary);
+
+        downloadButton = findViewById(R.id.file_download_button);
+        disconnectButton = findViewById(R.id.file_disconnect);
+        uploadButton = findViewById(R.id.file_upload);
     }
 
     @Override
@@ -141,9 +149,12 @@ public class FileExplorer extends AppCompatActivity {
                     binary = binaryButton.isChecked();
 
             Thread thread = new Thread(() -> {
-                runOnUiThread(() -> Snackbar
-                        .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
-                        .show());
+                runOnUiThread(() -> {
+                    Snackbar
+                            .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
+                            .show();
+                    setEnabled(false);
+                });
                 /* 开始传输 */
                 errorMsgCode = connection.downloadFile(filename, outputStream,
                         binary, passive, getLocalIpAddress());
@@ -158,6 +169,7 @@ public class FileExplorer extends AppCompatActivity {
                         showAlert(R.string.alert_title, errorMsgCode); // 错误提示
                         downloadFile.delete();
                     }
+                    setEnabled(true);
                 });
 
                 try {
@@ -201,9 +213,12 @@ public class FileExplorer extends AppCompatActivity {
                     binary = binaryButton.isChecked();
 
             Thread thread = new Thread(() -> {
-                runOnUiThread(() -> Snackbar
-                        .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
-                        .show());
+                runOnUiThread(() -> {
+                    Snackbar
+                            .make(findViewById(R.id.file_upload), R.string.message_start_transfer, LENGTH_SHORT)
+                            .show();
+                    setEnabled(false);
+                });
                 /* 开始传输 */
                 errorMsgCode = connection.uploadFile(fileName, inputStream,
                         binary, passive, getLocalIpAddress());
@@ -213,9 +228,10 @@ public class FileExplorer extends AppCompatActivity {
 
                     if (errorMsgCode == 0) // 成功提示
                         Snackbar
-                            .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
-                            .show();
+                                .make(findViewById(R.id.file_upload), R.string.message_finish_transfer, LENGTH_SHORT)
+                                .show();
                     else showAlert(R.string.alert_title, errorMsgCode); // 错误提示
+                    setEnabled(true);
                 });
                 try {
                     inputStream.close();
@@ -269,5 +285,11 @@ public class FileExplorer extends AppCompatActivity {
         }
 
         return ipAddressString;
+    }
+
+    private void setEnabled(boolean status) {
+        uploadButton.setEnabled(status);
+        downloadButton.setEnabled(status);
+        disconnectButton.setEnabled(status);
     }
 }

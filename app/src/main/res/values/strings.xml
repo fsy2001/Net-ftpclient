@@ -44,4 +44,7 @@
     <string name="alert_net_error">网络错误</string>
     <string name="message_start_transfer">正在传输</string>
     <string name="message_finish_transfer">传输完成</string>
+    <string name="file_structure">文件结构</string>
+    <string name="mode_stream">流式传输</string>
+    <string name="mode_block">块式传输</string>
 </resources>

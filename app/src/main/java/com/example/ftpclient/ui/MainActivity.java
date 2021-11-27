@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
 
         anonymousBox.setOnClickListener(view -> {
             boolean anonymous = anonymousBox.isChecked();
+            usernameText.setText(anonymous ? "anonymous" : "");
+            passwordText.setText("");
             usernameText.setEnabled(!anonymous);
             passwordText.setEnabled(!anonymous);
         });
@@ -66,27 +68,34 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        view.setEnabled(false);
+
         Thread thread = new Thread(() -> {
             try {
                 connection = new Connection(host, Integer.parseInt(port));
             } catch (IOException e) {
                 if (connection != null) connection.close();
-                runOnUiThread(() -> showAlert(R.string.alert_connection_error));
+                runOnUiThread(() -> {
+                    view.setEnabled(true);
+                    showAlert(R.string.alert_connection_error);
+                });
                 return;
             }
 
-            boolean anonymous = anonymousBox.isChecked();
-
             String username = usernameText.getText().toString();
             String password = passwordText.getText().toString();
-            if (!anonymous && !connection.login(username, password)) {
-                runOnUiThread(() -> showAlert(R.string.alert_credential_error));
+            if (!connection.login(username, password)) {
+                runOnUiThread(() -> {
+                    view.setEnabled(true);
+                    showAlert(R.string.alert_credential_error);
+                });
                 connection.close();
                 return;
             }
 
             /* 登录成功 */
             runOnUiThread(() -> {
+                view.setEnabled(true);
                 Intent connectIntent = new Intent(this, FileExplorer.class);
                 startActivity(connectIntent);
             });
